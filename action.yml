@@ -1,0 +1,41 @@
+name: "Find Latest Release Branch + Bump Dev Version"
+description: "Outputs the latest release/x.y.z branch and a bumped devCode (minor +1)"
+author: "Randy Tang"
+inputs: {}
+outputs:
+  latestReleaseBranch:
+    description: "The latest release/x.y.z branch"
+  devCode:
+    description: "The next dev version with bumped minor (x.(y+1).0)"
+runs:
+  using: "composite"
+  steps:
+    - name: Fetch all branches
+      shell: bash
+      run: git fetch --prune origin "+refs/heads/*:refs/remotes/origin/*"
+
+    - name: Find latest release branch and bump minor
+      id: compute
+      shell: bash
+      run: |
+        echo "Finding latest release/x.y.z branch..."
+        latest=$(
+          git for-each-ref \
+              --format='%(refname:short)' \
+              --sort=-version:refname \
+              refs/remotes/origin/release \
+          | grep -E '^origin/release/[0-9]+\.[0-9]+\.[0-9]+$' \
+          | head -n1 \
+          | sed 's|^origin/||'
+        )
+
+        echo "Latest release branch found: $latest"
+
+        version="${latest#release/}"
+        IFS='.' read -r major minor patch <<< "$version"
+        devCode="$major.$((minor + 1)).0"
+
+        echo "devCode calculated: $devCode"
+
+        echo "latestReleaseBranch=$latest" >> "$GITHUB_OUTPUT"
+        echo "devCode=$devCode" >> "$GITHUB_OUTPUT"
