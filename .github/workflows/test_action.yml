@@ -1,15 +1,25 @@
+
+name: Test Bump Dev Version
+
+on:
+  push:            
+    branches:
+      - develop     
+
 jobs:
   bump-dev-version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Use my custom action
+      - name: Use custom action to get latest release and dev version
+        id: find_latest_release_branch    
         uses: SweetRainGarden/find-latest-release-branch@develop
 
-      - name: Show outputs
+      - name: Show output values
         run: |
           echo "Latest branch ➜ ${{ steps.find_latest_release_branch.outputs.latestReleaseBranch }}"
           echo "Dev version   ➜ ${{ steps.find_latest_release_branch.outputs.devCode }}"
