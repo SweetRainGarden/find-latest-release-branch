@@ -1,12 +1,17 @@
 name: "Find Latest Release Branch + Bump Dev Version"
 description: "Outputs the latest release/x.y.z branch and a bumped devCode (minor +1)"
 author: "Randy Tang"
+
 inputs: {}
+
 outputs:
   latestReleaseBranch:
     description: "The latest release/x.y.z branch"
+    value: ${{ steps.find_latest_release_branch.outputs.latestReleaseBranch }}   # ✅ fix here
   devCode:
     description: "The next dev version with bumped minor (x.(y+1).0)"
+    value: ${{ steps.find_latest_release_branch.outputs.devCode }}                # ✅ fix here
+
 runs:
   using: "composite"
   steps:
