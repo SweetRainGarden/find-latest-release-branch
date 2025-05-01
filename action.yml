@@ -15,7 +15,7 @@ runs:
       run: git fetch --prune origin "+refs/heads/*:refs/remotes/origin/*"
 
     - name: Find latest release branch and bump minor
-      id: compute
+      id: find_latest_release_branch
       shell: bash
       run: |
         echo "Finding latest release/x.y.z branch..."
