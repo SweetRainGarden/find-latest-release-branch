@@ -32,15 +32,54 @@ runs:
         cd "${{ inputs.path }}"
 
         echo "Finding latest release/x.y.z branch..."
-        latest=$(
-          git for-each-ref \
-              --format='%(refname:short)' \
-              --sort=-version:refname \
-              refs/remotes/origin/release |
-          grep -E '^origin/release/[0-9]+\.[0-9]+\.[0-9]+$' |
-          head -n1 |
-          sed 's|^origin/||'
-        )
+
+        # --- write a line to the job summary (falls back to stdout locally) ---
+        summary() { printf '%s\n' "$*" >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"; }
+
+        summary "## find-latest-release-branch diagnostics"
+        summary ""
+        summary "- **pwd**: \`$(pwd)\`"
+        summary "- **git-dir**: \`$(git rev-parse --git-dir 2>&1)\`"
+        summary "- **toplevel**: \`$(git rev-parse --show-toplevel 2>&1)\`"
+        summary "- **is-shallow**: \`$(git rev-parse --is-shallow-repository 2>&1)\`"
+        summary "- **git version**: \`$(git --version 2>&1)\`"
+        summary ""
+        summary "### remotes"
+        summary '```'
+        git remote -v >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}" 2>&1 || true
+        summary '```'
+        summary "### remote.origin.fetch refspec(s)"
+        summary '```'
+        git config --get-all remote.origin.fetch >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}" 2>&1 || summary "(none configured)"
+        summary '```'
+
+        # Capture the release refs WITHOUT letting an empty result / SIGPIPE abort the step.
+        all_release_refs="$(git for-each-ref --format='%(refname:short)' --sort=-version:refname refs/remotes/origin/release 2>&1 || true)"
+        release_count="$(printf '%s\n' "$all_release_refs" | grep -c . || true)"
+
+        summary "### refs/remotes/origin/release (${release_count} ref(s))"
+        summary '```'
+        printf '%s\n' "$all_release_refs" | head -n 100 >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}" || true
+        summary '```'
+
+        latest="$(printf '%s\n' "$all_release_refs" \
+          | grep -E '^origin/release/[0-9]+\.[0-9]+\.[0-9]+$' \
+          | head -n1 \
+          | sed 's|^origin/||' || true)"
+
+        summary "- **latest matched**: \`${latest:-<none>}\`"
+
+        if [ -z "$latest" ]; then
+          summary ""
+          summary "> :x: No branch matched \`^origin/release/[0-9]+\\.[0-9]+\\.[0-9]+\$\` — dumping ALL origin refs below."
+          summary ""
+          summary "### all refs/remotes/origin/* (first 200)"
+          summary '```'
+          git for-each-ref --format='%(refname:short)' refs/remotes/origin 2>&1 | head -n 200 >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}" || true
+          summary '```'
+          echo "::error::No matching release/x.y.z branch found (see job summary for git state)"
+          exit 1
+        fi
 
         echo "Latest release branch found: $latest"
 
@@ -49,6 +88,7 @@ runs:
         devCode="$major.$((minor + 1)).0"
 
         echo "devCode calculated: $devCode"
+        summary "- **devCode**: \`$devCode\`"
 
         echo "latestReleaseBranch=$latest" >> "$GITHUB_OUTPUT"
         echo "devCode=$devCode" >> "$GITHUB_OUTPUT"
