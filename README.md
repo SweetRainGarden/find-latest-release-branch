@@ -7,7 +7,7 @@ Outputs the latest `release/x.y.z` branch and a bumped `devCode` (minor +1).
 | Name          | Required | Default | Description                                                                                  |
 | ------------- | -------- | ------- | -------------------------------------------------------------------------------------------- |
 | `path`        | No       | `.`     | Path to the git repo directory.                                                              |
-| `showSummary` | No       | `false` | Show diagnostics in the GitHub job summary log. Set to `'true'` to show; defaults to hidden. |
+| `showSummary` | No       | `false` | Show diagnostics in the GitHub job summary log. Set to `true` to show; defaults to hidden.    |
 
 ## Outputs
 
