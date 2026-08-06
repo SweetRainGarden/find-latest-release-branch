@@ -32,13 +32,15 @@ runs:
     - name: Find latest release branch and bump minor
       id: find_latest_release_branch
       shell: bash
+      env:
+        INPUT_SHOWSUMMARY: ${{ inputs.showSummary }}
       run: |
         cd "${{ inputs.path }}"
 
         echo "Finding latest release/x.y.z branch..."
 
         # --- decide where diagnostics go: the job summary, or nowhere when hidden ---
-        if [ "${{ inputs.showSummary }}" = "true" ]; then
+        if [ "$INPUT_SHOWSUMMARY" = "true" ]; then
           summary_file="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
         else
           summary_file="/dev/null"
